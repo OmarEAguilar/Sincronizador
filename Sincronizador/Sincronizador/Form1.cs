@@ -60,29 +60,81 @@ namespace Sincronizador
             }
         }
 
-        private void btnSincronizar_Click(object sender, EventArgs e)
+        private async void btnSincronizar_Click(object sender, EventArgs e)
         {
-            MessageBox.Show(" Sincronización iniciada...", "Sincronización", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            btnSincronizar.Enabled = false; // Bloquear botón mientras sincroniza
+            progressBarSync.Value = 0; // Reiniciar progreso
+            progressBarSync.Enabled = true;
 
-            // Sincronizar Orders
-            List<Dictionary<string, object>> orders = accessDb.GetUnsyncedOrders();
-            mariaDb.InsertOrdersIntoMariaDB(orders);
-            accessDb.MarkOrdersAsSynced();
-            mariaDb.MarkOrdersAsSyncedInMariaDB();
+            int totalSteps = 6; // Número de pasos
 
-            // Sincronizar OrderPayments
-            List<Dictionary<string, object>> payments = accessDb.GetUnsyncedOrderPayments();
-            mariaDb.InsertOrderPaymentsIntoMariaDB(payments);
-            accessDb.MarkRecordsAsSynced("OrderPayments");
-            mariaDb.MarkRecordsAsSyncedInMariaDB("OrderPayments");
+            await Task.Run(() =>
+            {
+                try
+                {
+                    // Sincronizar Orders
+                    List<Dictionary<string, object>> orders = accessDb.GetUnsyncedOrders();
+                    mariaDb.InsertOrdersIntoMariaDB(orders);
+                    UpdateProgressBar(100 / totalSteps);
 
-            // Sincronizar OrderTransactions
-            List<Dictionary<string, object>> transactions = accessDb.GetUnsyncedOrderTransactions();
-            mariaDb.InsertOrderTransactionsIntoMariaDB(transactions);
-            accessDb.MarkRecordsAsSynced("OrderTransactions");
-            mariaDb.MarkRecordsAsSyncedInMariaDB("OrderTransactions");
+                    accessDb.MarkOrdersAsSynced();
+                    mariaDb.MarkOrdersAsSyncedInMariaDB();
+                    UpdateProgressBar(100 / totalSteps);
 
-            MessageBox.Show(" Sincronización completada.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    // Sincronizar OrderPayments
+                    List<Dictionary<string, object>> payments = accessDb.GetUnsyncedOrderPayments();
+                    mariaDb.InsertOrderPaymentsIntoMariaDB(payments);
+                    UpdateProgressBar(100 / totalSteps);
+
+                    accessDb.MarkRecordsAsSynced("OrderPayments");
+                    mariaDb.MarkRecordsAsSyncedInMariaDB("OrderPayments");
+                    UpdateProgressBar(100 / totalSteps);
+
+                    // Sincronizar OrderTransactions
+                    List<Dictionary<string, object>> transactions = accessDb.GetUnsyncedOrderTransactions();
+                    mariaDb.InsertOrderTransactionsIntoMariaDB(transactions);
+                    UpdateProgressBar(100 / totalSteps);
+
+                    accessDb.MarkRecordsAsSynced("OrderTransactions");
+                    mariaDb.MarkRecordsAsSyncedInMariaDB("OrderTransactions");
+                    UpdateProgressBar(100 / totalSteps);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error en la sincronización: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            });
+
+            progressBarSync.Value = 100; // Asegurar que llegue al 100%
+            MessageBox.Show("Sincronización completada.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            progressBarSync.Value = 0; // Reiniciar progreso inicial
+            btnSincronizar.Enabled = true; // Reactivar el botón
+            progressBarSync.Enabled = false; // Deshabilitar la barra
+        }
+
+        private void UpdateProgressBar(int step)
+        {
+            if (progressBarSync.InvokeRequired)
+            {
+                progressBarSync.Invoke(new Action(() =>
+                {
+                    progressBarSync.Value += step;
+                    progressBarSync.Refresh(); // 🔹 Forzar actualización inmediata
+                }));
+            }
+            else
+            {
+                progressBarSync.Value += step;
+                progressBarSync.Refresh(); // 🔹 Forzar actualización inmediata
+            }
+        }
+
+
+        private void progressBarSync_Click(object sender, EventArgs e)
+        {
+
         }
     }
+
 }

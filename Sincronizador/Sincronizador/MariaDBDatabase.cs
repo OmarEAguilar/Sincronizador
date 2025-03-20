@@ -4,7 +4,7 @@ using System.Data;
 using MySql.Data.MySqlClient;
 using System.Windows.Forms;
 using System.Linq;
-
+using System.IO;
 namespace Sincronizador
 {
     public class MariaDBDatabase
@@ -13,23 +13,90 @@ namespace Sincronizador
 
         public MariaDBDatabase()
         {
-            connectionString = "Server=localhost;Database=RestaurantDB;User ID=root;Password=Pass123*;SslMode=none;";
+            connectionString = ReadConnectionStringFromConfig();
+
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                MessageBox.Show("Error: No se pudo obtener la conexión desde config.ini.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
+        private string ReadConnectionStringFromConfig()
+        {
+            string iniPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.ini");
+
+            if (!File.Exists(iniPath))
+            {
+                MessageBox.Show("No se encontró config.ini.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return null;
+            }
+
+            Dictionary<string, string> config = new Dictionary<string, string>();
+            string currentSection = "";
+
+            foreach (var line in File.ReadAllLines(iniPath))
+            {
+                string trimmedLine = line.Trim();
+
+                // Detectar secciones en el archivo INI
+                if (trimmedLine.StartsWith("[") && trimmedLine.EndsWith("]"))
+                {
+                    currentSection = trimmedLine.Substring(1, trimmedLine.Length - 2);
+                    continue;
+                }
+
+                // Solo leer datos dentro de [MariaDB]
+                if (currentSection == "MariaDB" && trimmedLine.Contains("="))
+                {
+                    var parts = trimmedLine.Split(new[] { '=' }, 2);
+                    config[parts[0].Trim()] = parts[1].Trim();
+                }
+            }
+
+            // Verificar qué valores se han leído
+            Console.WriteLine("Valores leídos de config.ini:");
+            foreach (var kvp in config)
+            {
+                Console.WriteLine($"{kvp.Key} = {kvp.Value}");
+            }
+
+            // Validar que todas las claves necesarias existan
+            if (!config.ContainsKey("Host") || !config.ContainsKey("Name") ||
+                !config.ContainsKey("User") || !config.ContainsKey("Password") ||
+                !config.ContainsKey("SslMode"))
+            {
+                MessageBox.Show("El archivo config.ini no contiene toda la configuración necesaria de MariaDB.",
+                                "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return null;
+            }
+
+            // Construir la cadena de conexión
+            return $"Server={config["Host"]};Database={config["Name"]};User ID={config["User"]};Password={config["Password"]};SslMode={config["SslMode"]};";
+        }
+
+
 
         public bool TestConnection()
         {
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                MessageBox.Show("No se pudo establecer la conexión porque la cadena de conexión es nula o está vacía.",
+                                "Error de Conexión", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+
             try
             {
                 using (MySqlConnection conn = new MySqlConnection(connectionString))
                 {
                     conn.Open();
-                    Console.WriteLine(" Conexión exitosa a MariaDB.");
+                    Console.WriteLine("Conexión exitosa a MariaDB.");
                     return true;
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show(" Error al conectar con MariaDB: " + ex.Message, "Error de Conexión", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Error al conectar con MariaDB: " + ex.Message,
+                                "Error de Conexión", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }
         }

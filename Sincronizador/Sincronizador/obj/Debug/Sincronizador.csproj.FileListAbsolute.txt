@@ -39,5 +39,5 @@ C:\Users\Omar\source\repos\Sincronizador\Sincronizador\bin\Debug\System.Memory.x
 C:\Users\Omar\source\repos\Sincronizador\Sincronizador\bin\Debug\System.Numerics.Vectors.xml
 C:\Users\Omar\source\repos\Sincronizador\Sincronizador\bin\Debug\System.Runtime.CompilerServices.Unsafe.xml
 C:\Users\Omar\source\repos\Sincronizador\Sincronizador\bin\Debug\System.Threading.Tasks.Extensions.xml
-C:\Users\Omar\source\repos\Sincronizador\Sincronizador\obj\Debug\Sincronizador.csproj.AssemblyReference.cache
 C:\Users\Omar\source\repos\Sincronizador\Sincronizador\obj\Debug\Sincronizador.csproj.CopyComplete
+C:\Users\Omar\source\repos\Sincronizador\Sincronizador\obj\Debug\Sincronizador.csproj.AssemblyReference.cache
