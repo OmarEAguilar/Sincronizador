@@ -47,26 +47,6 @@ namespace Sincronizador
             return null;
         }
 
-        public DataTable GetOrderHeaders()
-        {
-            return GetRecords("OrderHeaders");
-        }
-
-        public List<Dictionary<string, object>> GetUnsyncedOrders()
-        {
-            return GetUnsyncedRecords("OrderHeaders");
-        }
-
-        public List<Dictionary<string, object>> GetUnsyncedOrderPayments()
-        {
-            return GetUnsyncedRecords("OrderPayments");
-        }
-
-        public List<Dictionary<string, object>> GetUnsyncedOrderTransactions()
-        {
-            return GetUnsyncedRecords("OrderTransactions");
-        }
-
         public DataTable GetRecords(string tableName)
         {
             DataTable dt = new DataTable();
@@ -90,7 +70,7 @@ namespace Sincronizador
             return dt;
         }
 
-        private List<Dictionary<string, object>> GetUnsyncedRecords(string tableName)
+        public List<Dictionary<string, object>> GetUnsyncedRecords(string tableName)
         {
             List<Dictionary<string, object>> records = new List<Dictionary<string, object>>();
 
@@ -126,11 +106,6 @@ namespace Sincronizador
             return records;
         }
 
-        public void MarkOrdersAsSynced()
-        {
-            MarkRecordsAsSynced("OrderHeaders");
-        }
-
         public void MarkRecordsAsSynced(string tableName)
         {
             try
@@ -143,14 +118,22 @@ namespace Sincronizador
                     using (OleDbCommand cmd = new OleDbCommand(query, conn))
                     {
                         int updatedRows = cmd.ExecuteNonQuery();
-                        Console.WriteLine($" {updatedRows} registros actualizados como sincronizados en {tableName} en Access.");
+                        Console.WriteLine($"✔ {updatedRows} registros marcados como sincronizados en {tableName}.");
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al actualizar registros en {tableName} en Access: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Console.WriteLine($"❌ Error al actualizar registros en {tableName} en Access: {ex.Message}");
             }
         }
+
+        public void MarkAllAsSynced()
+        {
+            MarkRecordsAsSynced("OrderHeaders");
+            MarkRecordsAsSynced("OrderPayments");
+            MarkRecordsAsSynced("OrderTransactions");
+        }
+
     }
 }

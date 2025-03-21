@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
-using System.Drawing;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-
 
 namespace Sincronizador
 {
@@ -20,20 +16,31 @@ namespace Sincronizador
         {
             InitializeComponent();
             accessDb = new AccessDatabase(); // Crear instancia de AccessDatabase
+            mariaDb = new MariaDBDatabase(); // Crear instancia de MariaDB
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
             ConsultarRegistros();
-            mariaDb = new MariaDBDatabase(); // Crear instancia de MariaDB
 
             // Intentar conectar con MariaDB al iniciar
             if (mariaDb.TestConnection())
             {
-                int orderCount = mariaDb.GetOrderCount();
-                Console.WriteLine($" Registros en OrderHeaders: {orderCount}");
-            }
+                Console.WriteLine("Conexión con MariaDB exitosa.");
 
+                // Listado de tablas a contar
+                string[] tablas = { "OrderHeaders", "OrderPayments", "OrderTransactions" };
+
+                foreach (string tabla in tablas)
+                {
+                    int count = mariaDb.GetTableCount(tabla);
+                    Console.WriteLine($" Registros en {tabla}: {count}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("No se pudo conectar a MariaDB.");
+            }
         }
 
         private void ConsultarRegistros()
@@ -44,19 +51,15 @@ namespace Sincronizador
                 return;
             }
 
-            DataTable dt = accessDb.GetOrderHeaders();
+            // Listado de tablas a consultar
+            string[] tablas = { "OrderHeaders", "OrderPayments", "OrderTransactions" };
 
-            if (dt.Rows.Count > 0)
+            foreach (string tabla in tablas)
             {
-                Console.WriteLine(" Registros encontrados:");
-                foreach (DataRow row in dt.Rows)
-                {
-                    Console.WriteLine($"OrderID: {row["OrderID"]}, Fecha: {row["OrderDateTime"]}");
-                }
-            }
-            else
-            {
-                Console.WriteLine(" No hay registros en OrderHeaders.");
+                DataTable dt = accessDb.GetRecords(tabla);
+                Console.WriteLine(dt.Rows.Count > 0
+                    ? $" Registros encontrados en {tabla}: {dt.Rows.Count}"
+                    : $" No hay registros en {tabla}.");
             }
         }
 
@@ -66,38 +69,17 @@ namespace Sincronizador
             progressBarSync.Value = 0; // Reiniciar progreso
             progressBarSync.Enabled = true;
 
-            int totalSteps = 6; // Número de pasos
+            string[] tablas = { "OrderHeaders", "OrderPayments", "OrderTransactions" };
+            int totalSteps = tablas.Length; // Número de pasos dinámico
 
             await Task.Run(() =>
             {
                 try
                 {
-                    // Sincronizar Orders
-                    List<Dictionary<string, object>> orders = accessDb.GetUnsyncedOrders();
-                    mariaDb.InsertOrdersIntoMariaDB(orders);
-                    UpdateProgressBar(100 / totalSteps);
-
-                    accessDb.MarkOrdersAsSynced();
-                    mariaDb.MarkOrdersAsSyncedInMariaDB();
-                    UpdateProgressBar(100 / totalSteps);
-
-                    // Sincronizar OrderPayments
-                    List<Dictionary<string, object>> payments = accessDb.GetUnsyncedOrderPayments();
-                    mariaDb.InsertOrderPaymentsIntoMariaDB(payments);
-                    UpdateProgressBar(100 / totalSteps);
-
-                    accessDb.MarkRecordsAsSynced("OrderPayments");
-                    mariaDb.MarkRecordsAsSyncedInMariaDB("OrderPayments");
-                    UpdateProgressBar(100 / totalSteps);
-
-                    // Sincronizar OrderTransactions
-                    List<Dictionary<string, object>> transactions = accessDb.GetUnsyncedOrderTransactions();
-                    mariaDb.InsertOrderTransactionsIntoMariaDB(transactions);
-                    UpdateProgressBar(100 / totalSteps);
-
-                    accessDb.MarkRecordsAsSynced("OrderTransactions");
-                    mariaDb.MarkRecordsAsSyncedInMariaDB("OrderTransactions");
-                    UpdateProgressBar(100 / totalSteps);
+                    foreach (string tabla in tablas)
+                    {
+                        SincronizarTabla(tabla, totalSteps);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -113,28 +95,44 @@ namespace Sincronizador
             progressBarSync.Enabled = false; // Deshabilitar la barra
         }
 
+        private void SincronizarTabla(string tableName, int totalSteps)
+        {
+            // Obtener todos los registros no sincronizados de una vez
+            List<Dictionary<string, object>> records = accessDb.GetUnsyncedRecords(tableName);
+            Console.WriteLine($"🔍 Registros no sincronizados en {tableName}: {records.Count}");
+
+            if (records.Count > 0)
+            {
+                // Insertar todos en MariaDB en un solo paso
+                mariaDb.InsertRecordsIntoMariaDB(tableName, records);
+                UpdateProgressBar(100 / totalSteps);
+
+                // Marcar como sincronizados en ambas bases de datos
+                accessDb.MarkRecordsAsSynced(tableName);
+                mariaDb.MarkRecordsAsSyncedInMariaDB(tableName);
+                UpdateProgressBar(100 / totalSteps);
+            }
+        }
+
         private void UpdateProgressBar(int step)
         {
             if (progressBarSync.InvokeRequired)
             {
                 progressBarSync.Invoke(new Action(() =>
                 {
-                    progressBarSync.Value += step;
-                    progressBarSync.Refresh(); // 🔹 Forzar actualización inmediata
+                    int newValue = progressBarSync.Value + step;
+                    progressBarSync.Value = Math.Min(newValue, progressBarSync.Maximum); // 🔹 Evita que supere el máximo
+                    progressBarSync.Refresh();
                 }));
             }
             else
             {
-                progressBarSync.Value += step;
-                progressBarSync.Refresh(); // 🔹 Forzar actualización inmediata
+                int newValue = progressBarSync.Value + step;
+                progressBarSync.Value = Math.Min(newValue, progressBarSync.Maximum); // 🔹 Evita que supere el máximo
+                progressBarSync.Refresh();
             }
         }
 
-
-        private void progressBarSync_Click(object sender, EventArgs e)
-        {
-
-        }
+        private void progressBarSync_Click(object sender, EventArgs e) { }
     }
-
 }

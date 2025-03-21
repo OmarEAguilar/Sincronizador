@@ -101,26 +101,12 @@ namespace Sincronizador
             }
         }
 
-        public void InsertOrdersIntoMariaDB(List<Dictionary<string, object>> orders)
-        {
-            InsertRecordsIntoMariaDB("OrderHeaders", orders);
-        }
 
-        public void InsertOrderPaymentsIntoMariaDB(List<Dictionary<string, object>> payments)
-        {
-            InsertRecordsIntoMariaDB("OrderPayments", payments);
-        }
-
-        public void InsertOrderTransactionsIntoMariaDB(List<Dictionary<string, object>> transactions)
-        {
-            InsertRecordsIntoMariaDB("OrderTransactions", transactions);
-        }
-
-        private void InsertRecordsIntoMariaDB(string tableName, List<Dictionary<string, object>> records)
+        public void InsertRecordsIntoMariaDB(string tableName, List<Dictionary<string, object>> records)
         {
             if (records.Count == 0)
             {
-                Console.WriteLine($" No hay datos nuevos para sincronizar en {tableName}.");
+                Console.WriteLine($"❌ No hay datos nuevos para sincronizar en {tableName}.");
                 return;
             }
 
@@ -141,11 +127,7 @@ namespace Sincronizador
                         {
                             foreach (var key in record.Keys)
                             {
-                                object value = record[key];
-                                if (value is string && string.IsNullOrWhiteSpace((string)value))
-                                {
-                                    value = DBNull.Value;
-                                }
+                                object value = record[key] ?? DBNull.Value;
                                 cmd.Parameters.AddWithValue("@" + key, value);
                             }
 
@@ -153,19 +135,15 @@ namespace Sincronizador
                         }
                     }
 
-                    Console.WriteLine($" {records.Count} registros sincronizados con {tableName} en MariaDB.");
+                    Console.WriteLine($"✔ {records.Count} registros sincronizados con {tableName} en MariaDB.");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al insertar datos en {tableName} en MariaDB: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Console.WriteLine($"❌ Error al insertar datos en {tableName} en MariaDB: {ex.Message}");
             }
         }
 
-        public void MarkOrdersAsSyncedInMariaDB()
-        {
-            MarkRecordsAsSyncedInMariaDB("OrderHeaders");
-        }
 
         public void MarkRecordsAsSyncedInMariaDB(string tableName)
         {
@@ -179,16 +157,16 @@ namespace Sincronizador
                     using (MySqlCommand cmd = new MySqlCommand(query, conn))
                     {
                         int updatedRows = cmd.ExecuteNonQuery();
-                        Console.WriteLine($" {updatedRows} registros actualizados como sincronizados en {tableName} en MariaDB.");
+                        Console.WriteLine($"✔ {updatedRows} registros marcados como sincronizados en {tableName} en MariaDB.");
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al actualizar registros en {tableName} en MariaDB: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Console.WriteLine($"❌ Error al actualizar registros en {tableName} en MariaDB: {ex.Message}");
             }
         }
-        public int GetOrderCount()
+        public int GetTableCount(string tableName)
         {
             int count = 0;
             try
@@ -196,7 +174,7 @@ namespace Sincronizador
                 using (MySqlConnection conn = new MySqlConnection(connectionString))
                 {
                     conn.Open();
-                    string query = "SELECT COUNT(*) FROM OrderHeaders";
+                    string query = $"SELECT COUNT(*) FROM {tableName}";
 
                     using (MySqlCommand cmd = new MySqlCommand(query, conn))
                     {
@@ -206,7 +184,7 @@ namespace Sincronizador
             }
             catch (Exception ex)
             {
-                MessageBox.Show(" Error al obtener el conteo de órdenes: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Error al obtener el conteo de registros en {tableName}: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             return count;
         }
