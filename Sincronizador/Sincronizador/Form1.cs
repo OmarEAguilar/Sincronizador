@@ -29,10 +29,7 @@ namespace Sincronizador
                 Console.WriteLine("Conexión con MariaDB exitosa.");
 
                 // Listado de tablas a contar
-                string[] tablas = { "OrderHeaders", "OrderPayments", "OrderTransactions", "OnAccountCharges", "RegisterCashiers" };
-
-
-                foreach (string tabla in tablas)
+                foreach (string tabla in GetTablasASincronizar())
                 {
                     int count = mariaDb.GetTableCount(tabla);
                     Console.WriteLine($" Registros en {tabla}: {count}");
@@ -53,9 +50,7 @@ namespace Sincronizador
             }
 
             // Listado de tablas a consultar
-            string[] tablas = { "OrderHeaders", "OrderPayments", "OrderTransactions", "OnAccountCharges", "RegisterCashiers" };
-
-            foreach (string tabla in tablas)
+            foreach (string tabla in GetTablasASincronizar())
             {
                 DataTable dt = accessDb.GetRecords(tabla);
                 Console.WriteLine(dt.Rows.Count > 0
@@ -70,8 +65,8 @@ namespace Sincronizador
             progressBarSync.Value = 0; // Reiniciar progreso
             progressBarSync.Enabled = true;
 
-            string[] tablas = { "OrderHeaders", "OrderPayments", "OrderTransactions", "OnAccountCharges", "RegisterCashiers" };
-            int totalSteps = tablas.Length; // Número de pasos dinámico
+            string[] tablas = GetTablasASincronizar();
+            int totalSteps = tablas.Length;
 
             await Task.Run(() =>
             {
@@ -87,6 +82,8 @@ namespace Sincronizador
                     MessageBox.Show("Error en la sincronización: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             });
+
+            accessDb.MarkAllAsSynced(GetTablasASincronizar());
 
             progressBarSync.Value = 100; // Asegurar que llegue al 100%
             MessageBox.Show("Sincronización completada.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -133,6 +130,34 @@ namespace Sincronizador
                 progressBarSync.Refresh();
             }
         }
+
+        private string[] GetTablasASincronizar()
+        {
+            return new[]
+            {
+                "OrderHeaders",
+                "OrderPayments",
+                "OrderTransactions",
+                "OnAccountCharges",
+                "RegisterCashiers"
+
+                /*"MenuCategories",
+                "MenuExplosion",
+                "MenuGroups",
+                "MenuGroupSchedule",
+                "MenuItemIngredients",
+                "MenuItemPrices",
+                "MenuItems",
+                "MenuModifierPopUps",
+                "MenuModifiers",
+                "ModBuilderDetails",
+                "ModBuilderTemplates",
+                "EmployeeFiles",
+                "Discounts"*/
+
+            };
+        }
+
 
         private void progressBarSync_Click(object sender, EventArgs e) { }
     }

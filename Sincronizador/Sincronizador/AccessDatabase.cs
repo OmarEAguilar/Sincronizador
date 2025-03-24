@@ -128,13 +128,12 @@ namespace Sincronizador
             }
         }
 
-        public void MarkAllAsSynced()
+        public void MarkAllAsSynced(IEnumerable<string> tablas)
         {
-            MarkRecordsAsSynced("OrderHeaders");
-            MarkRecordsAsSynced("OrderPayments");
-            MarkRecordsAsSynced("OrderTransactions");
-            MarkRecordsAsSynced("OnAccountCharges");
-            MarkRecordsAsSynced("RegisterCashiers");
+            foreach (var tabla in tablas)
+            {
+                MarkRecordsAsSynced(tabla);
+            }
         }
 
     }
