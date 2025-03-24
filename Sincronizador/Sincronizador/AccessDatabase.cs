@@ -118,13 +118,13 @@ namespace Sincronizador
                     using (OleDbCommand cmd = new OleDbCommand(query, conn))
                     {
                         int updatedRows = cmd.ExecuteNonQuery();
-                        Console.WriteLine($"✔ {updatedRows} registros marcados como sincronizados en {tableName}.");
+                        Console.WriteLine($" {updatedRows} registros marcados como sincronizados en {tableName}.");
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Error al actualizar registros en {tableName} en Access: {ex.Message}");
+                Console.WriteLine($" Error al actualizar registros en {tableName} en Access: {ex.Message}");
             }
         }
 
@@ -133,6 +133,8 @@ namespace Sincronizador
             MarkRecordsAsSynced("OrderHeaders");
             MarkRecordsAsSynced("OrderPayments");
             MarkRecordsAsSynced("OrderTransactions");
+            MarkRecordsAsSynced("OnAccountCharges");
+            MarkRecordsAsSynced("RegisterCashiers");
         }
 
     }

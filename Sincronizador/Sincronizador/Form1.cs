@@ -29,7 +29,8 @@ namespace Sincronizador
                 Console.WriteLine("Conexión con MariaDB exitosa.");
 
                 // Listado de tablas a contar
-                string[] tablas = { "OrderHeaders", "OrderPayments", "OrderTransactions" };
+                string[] tablas = { "OrderHeaders", "OrderPayments", "OrderTransactions", "OnAccountCharges", "RegisterCashiers" };
+
 
                 foreach (string tabla in tablas)
                 {
@@ -52,7 +53,7 @@ namespace Sincronizador
             }
 
             // Listado de tablas a consultar
-            string[] tablas = { "OrderHeaders", "OrderPayments", "OrderTransactions" };
+            string[] tablas = { "OrderHeaders", "OrderPayments", "OrderTransactions", "OnAccountCharges", "RegisterCashiers" };
 
             foreach (string tabla in tablas)
             {
@@ -69,7 +70,7 @@ namespace Sincronizador
             progressBarSync.Value = 0; // Reiniciar progreso
             progressBarSync.Enabled = true;
 
-            string[] tablas = { "OrderHeaders", "OrderPayments", "OrderTransactions" };
+            string[] tablas = { "OrderHeaders", "OrderPayments", "OrderTransactions", "OnAccountCharges", "RegisterCashiers" };
             int totalSteps = tablas.Length; // Número de pasos dinámico
 
             await Task.Run(() =>

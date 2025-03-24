@@ -87,3 +87,4 @@ C:\Users\Omar\Downloads\Sincronizador\Sincronizador\Sincronizador\bin\Debug\Sinc
 C:\Users\Omar\Downloads\Sincronizador\Sincronizador\Sincronizador\bin\Debug\Sincronizador.application
 C:\Users\Omar\Downloads\Sincronizador\Sincronizador\Sincronizador\obj\Debug\Sincronizador.exe.manifest
 C:\Users\Omar\Downloads\Sincronizador\Sincronizador\Sincronizador\obj\Debug\Sincronizador.application
+C:\Users\Omar\Downloads\Sincronizador\Sincronizador\Sincronizador\obj\Debug\Sincronizador.csproj.AssemblyReference.cache
