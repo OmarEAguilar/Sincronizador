@@ -13,23 +13,30 @@ namespace Sincronizador
         private AccessDatabase accessDb;
         private MariaDBDatabase mariaDb;
 
+        private static readonly Dictionary<string, string> CamposClavePorTabla = new Dictionary<string, string>()
+
+        {
+            { "OrderHeaders", "OrderID" },
+            { "OrderPayments", "OrderID" },
+            { "OrderTransactions", "OrderID" },
+            { "OnAccountCharges", "OrderID" },
+            { "RegisterCashiers", "CashierID" }
+        };
+
         public Form1()
         {
             InitializeComponent();
-            accessDb = new AccessDatabase(); // Crear instancia de AccessDatabase
-            mariaDb = new MariaDBDatabase(); // Crear instancia de MariaDB
+            accessDb = new AccessDatabase();
+            mariaDb = new MariaDBDatabase();
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {
             ConsultarRegistros();
 
-            // Intentar conectar con MariaDB al iniciar
             if (mariaDb.TestConnection())
             {
                 Console.WriteLine("Conexión con MariaDB exitosa.");
-
-                // Listado de tablas a contar
                 foreach (string tabla in GetTablasASincronizar())
                 {
                     int count = mariaDb.GetTableCount(tabla);
@@ -50,7 +57,6 @@ namespace Sincronizador
                 return;
             }
 
-            // Listado de tablas a consultar
             foreach (string tabla in GetTablasASincronizar())
             {
                 DataTable dt = accessDb.GetRecords(tabla);
@@ -79,14 +85,13 @@ namespace Sincronizador
                 }
             }
 
-            // Valor por defecto si no está definido
             return 0;
         }
 
         private async void btnSincronizar_Click(object sender, EventArgs e)
         {
-            btnSincronizar.Enabled = false; // Bloquear botón mientras sincroniza
-            progressBarSync.Value = 0; // Reiniciar progreso
+            btnSincronizar.Enabled = false;
+            progressBarSync.Value = 0;
             progressBarSync.Enabled = true;
 
             string[] tablas = GetTablasASincronizar();
@@ -109,12 +114,12 @@ namespace Sincronizador
 
             accessDb.MarkAllAsSynced(GetTablasASincronizar());
 
-            progressBarSync.Value = 100; // Asegurar que llegue al 100%
+            progressBarSync.Value = 100;
             MessageBox.Show("Sincronización completada.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-            progressBarSync.Value = 0; // Reiniciar progreso inicial
-            btnSincronizar.Enabled = true; // Reactivar el botón
-            progressBarSync.Enabled = false; // Deshabilitar la barra
+            progressBarSync.Value = 0;
+            btnSincronizar.Enabled = true;
+            progressBarSync.Enabled = false;
         }
 
         private void SincronizarTabla(string tableName, int totalSteps)
@@ -124,7 +129,6 @@ namespace Sincronizador
 
             if (records.Count > 0)
             {
-                // Injectar sucursalid solo en OrderHeaders
                 if (tableName == "OrderHeaders")
                 {
                     int sucursalID = GetSucursalIDDesdeConfig();
@@ -143,7 +147,43 @@ namespace Sincronizador
                 accessDb.MarkRecordsAsSynced(tableName);
                 mariaDb.MarkRecordsAsSyncedInMariaDB(tableName);
                 UpdateProgressBar(100 / totalSteps);
+
+                EscribirLog(tableName, records.Count, GetSucursalIDDesdeConfig(), records);
             }
+            else
+            {
+                EscribirLog(tableName, 0, GetSucursalIDDesdeConfig(), new List<Dictionary<string, object>>());
+            }
+        }
+
+        private void EscribirLog(string tabla, int cantidad, int sucursalId, List<Dictionary<string, object>> registros)
+        {
+            string logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "sincronizacion.log");
+            string fecha = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            string campoClave = CamposClavePorTabla.ContainsKey(tabla) ? CamposClavePorTabla[tabla] : null;
+
+            List<string> ids = new List<string>();
+            if (!string.IsNullOrEmpty(campoClave))
+            {
+                foreach (var registro in registros)
+                {
+                    if (registro.TryGetValue(campoClave, out object value) && value != null)
+                    {
+                        string id = value.ToString();
+                        if (!ids.Contains(id))
+                            ids.Add(id);
+                    }
+                }
+            }
+
+            string linea = $"[{fecha}] Tabla: {tabla}";
+            if (ids.Count > 0)
+                linea += $" ({campoClave}: {string.Join(", ", ids)})";
+
+            linea += $" | SucursalID: {sucursalId} | Registros insertados: {cantidad}";
+
+            File.AppendAllText(logPath, linea + Environment.NewLine);
         }
 
         private void UpdateProgressBar(int step)
@@ -153,14 +193,14 @@ namespace Sincronizador
                 progressBarSync.Invoke(new Action(() =>
                 {
                     int newValue = progressBarSync.Value + step;
-                    progressBarSync.Value = Math.Min(newValue, progressBarSync.Maximum); // 🔹 Evita que supere el máximo
+                    progressBarSync.Value = Math.Min(newValue, progressBarSync.Maximum);
                     progressBarSync.Refresh();
                 }));
             }
             else
             {
                 int newValue = progressBarSync.Value + step;
-                progressBarSync.Value = Math.Min(newValue, progressBarSync.Maximum); // 🔹 Evita que supere el máximo
+                progressBarSync.Value = Math.Min(newValue, progressBarSync.Maximum);
                 progressBarSync.Refresh();
             }
         }
@@ -174,30 +214,10 @@ namespace Sincronizador
                 "OrderTransactions",
                 "OnAccountCharges",
                 "RegisterCashiers"
-
-                /*"MenuCategories",
-                "MenuExplosion",
-                "MenuGroups",
-                "MenuGroupSchedule",
-                "MenuItemIngredients",
-                "MenuItemPrices",
-                "MenuItems",
-                "MenuModifierPopUps",
-                "MenuModifiers",
-                "ModBuilderDetails",
-                "ModBuilderTemplates",
-                "EmployeeFiles",
-                "Discounts"*/
-
             };
         }
 
-
         private void progressBarSync_Click(object sender, EventArgs e) { }
-
-        private void pictureBox1_Click(object sender, EventArgs e)
-        {
-
-        }
+        private void pictureBox1_Click(object sender, EventArgs e) { }
     }
 }
