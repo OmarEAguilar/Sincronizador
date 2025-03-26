@@ -69,5 +69,24 @@ namespace Sincronizador.Properties {
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
+        
+        /// <summary>
+        ///   Busca una cadena traducida similar a [MariaDB]
+        ///Host=localhost
+        ///Name=restaurantdb
+        ///User=root
+        ///Password=Pass123*
+        ///SslMode=none
+        ///[AccessDatabase] #Acces
+        ///Path=C:\Users\Omar\bd\ZOCALO2025.mdb
+        ///[Sucursal]
+        ///SucursalID=1
+        ///#Zocalo San Benito.
+        /// </summary>
+        internal static string config {
+            get {
+                return ResourceManager.GetString("config", resourceCulture);
+            }
+        }
     }
 }
