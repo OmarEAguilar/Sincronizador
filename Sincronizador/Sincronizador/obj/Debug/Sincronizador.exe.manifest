@@ -126,14 +126,14 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="Sincronizador.exe" size="20904">
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="Sincronizador.exe" size="21416">
       <assemblyIdentity name="Sincronizador" version="1.0.0.0" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>z/dU2felRhhWEVjQ408bnbZuMpZeV+pAOI9/cpVv37g=</dsig:DigestValue>
+        <dsig:DigestValue>TVLPoz0fXj6peR1wDm6weZNIb/KOd+uHnZt69gBq3pc=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>

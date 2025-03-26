@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.IO;
 
 namespace Sincronizador
 {
@@ -59,6 +60,29 @@ namespace Sincronizador
             }
         }
 
+        private int GetSucursalIDDesdeConfig()
+        {
+            string rutaConfig = "config.ini";
+
+            if (File.Exists(rutaConfig))
+            {
+                foreach (string linea in File.ReadAllLines(rutaConfig))
+                {
+                    if (linea.StartsWith("SucursalID="))
+                    {
+                        string valor = linea.Split('=')[1].Trim();
+                        if (int.TryParse(valor, out int sucursalID))
+                        {
+                            return sucursalID;
+                        }
+                    }
+                }
+            }
+
+            // Valor por defecto si no está definido
+            return 0;
+        }
+
         private async void btnSincronizar_Click(object sender, EventArgs e)
         {
             btnSincronizar.Enabled = false; // Bloquear botón mientras sincroniza
@@ -95,17 +119,27 @@ namespace Sincronizador
 
         private void SincronizarTabla(string tableName, int totalSteps)
         {
-            // Obtener todos los registros no sincronizados de una vez
             List<Dictionary<string, object>> records = accessDb.GetUnsyncedRecords(tableName);
             Console.WriteLine($"🔍 Registros no sincronizados en {tableName}: {records.Count}");
 
             if (records.Count > 0)
             {
-                // Insertar todos en MariaDB en un solo paso
+                // Injectar sucursalid solo en OrderHeaders
+                if (tableName == "OrderHeaders")
+                {
+                    int sucursalID = GetSucursalIDDesdeConfig();
+                    foreach (var record in records)
+                    {
+                        if (!record.ContainsKey("sucursalid"))
+                        {
+                            record["sucursalid"] = sucursalID;
+                        }
+                    }
+                }
+
                 mariaDb.InsertRecordsIntoMariaDB(tableName, records);
                 UpdateProgressBar(100 / totalSteps);
 
-                // Marcar como sincronizados en ambas bases de datos
                 accessDb.MarkRecordsAsSynced(tableName);
                 mariaDb.MarkRecordsAsSyncedInMariaDB(tableName);
                 UpdateProgressBar(100 / totalSteps);
